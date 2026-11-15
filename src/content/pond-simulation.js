@@ -24,6 +24,7 @@
   const MAX_ESCAPE_TURN = 2.85; // just under PI so a fish never attempts an exact about-face
   const ZONE_ARRIVE_DIST_SQ = 22 * 22;
   const CURSOR_RIPPLE_MIN_MOVE_SQ = 14 * 14;
+  const FADE_SECONDS = 0.8; // time for a fish to fade in or out when the school size changes
 
   function pickWeightedVariety(varieties) {
     let total = 0;
@@ -442,27 +443,63 @@
         patternPhase,
         patternLut: null,
         colorCache: null,
+        alpha: 1, // 0..1, animated while the fish fades in or out
+        leaving: false, // fading out; removed once invisible
         spine,
         centerSpine,
       };
     }
 
-    syncFishCount(targetCount) {
-      const count = Math.max(1, Math.min(20, Math.round(targetCount)));
-      while (this.fish.length < count) {
-        this.fish.push(this.createFish());
+    // Sorts fish so the ones most worth keeping come first: those in open water, then the rest
+    sortByVisibility(list) {
+      if (!this.clearField) return list;
+      const openness = new Map();
+      for (let i = 0; i < list.length; i++) {
+        openness.set(list[i], this.sampleClearField(list[i].x, list[i].y).openness);
       }
-      if (this.fish.length > count) {
-        if (this.clearField) {
-          // Let go of the fish hidden under page content first, so visible ones do not vanish
-          const openness = new Map();
-          for (let i = 0; i < this.fish.length; i++) {
-            const f = this.fish[i];
-            openness.set(f, this.sampleClearField(f.x, f.y).openness);
-          }
-          this.fish.sort((a, b) => openness.get(b) - openness.get(a));
+      return list.sort((a, b) => openness.get(b) - openness.get(a));
+    }
+
+    // Makes the school `targetCount` fish large. Without `fade`, fish are added and removed at once.
+    // With `fade`, added fish fade in and removed fish fade out while they keep swimming, so the
+    // school never visibly pops. Fish hidden under page content are let go first.
+    syncFishCount(targetCount, fade = false) {
+      const count = Math.max(1, Math.min(20, Math.round(targetCount)));
+
+      if (!fade) {
+        this.fish = this.fish.filter((f) => !f.leaving);
+        for (const f of this.fish) f.alpha = 1;
+        while (this.fish.length < count) {
+          this.fish.push(this.createFish());
         }
-        this.fish.length = count;
+        if (this.fish.length > count) {
+          this.fish = this.sortByVisibility(this.fish.slice()).slice(0, count);
+        }
+        this.fish.sort((a, b) => a.depth - b.depth);
+        return;
+      }
+
+      let staying = this.fish.filter((f) => !f.leaving);
+      if (staying.length < count) {
+        // Bring back fish that were on their way out before creating new ones
+        for (const f of this.fish) {
+          if (staying.length >= count) break;
+          if (f.leaving) {
+            f.leaving = false;
+            staying.push(f);
+          }
+        }
+        while (staying.length < count) {
+          const f = this.createFish();
+          f.alpha = 0;
+          this.fish.push(f);
+          staying.push(f);
+        }
+      } else if (staying.length > count) {
+        const keep = new Set(this.sortByVisibility(staying.slice()).slice(0, count));
+        for (const f of staying) {
+          if (!keep.has(f)) f.leaving = true;
+        }
       }
       this.fish.sort((a, b) => a.depth - b.depth);
     }
@@ -538,6 +575,7 @@
       const speedMul = settings.speed || 1.0;
 
       this.stepEffects(clampedDt, settings);
+      this.stepFades(clampedDt);
 
       const baseMargin = Math.min(32, Math.floor(Math.min(this.width, this.height) * 0.2));
       const margin = this.clearField ? Math.min(10, baseMargin) : baseMargin;
@@ -572,6 +610,20 @@
 
         this.moveFish(f, s, clampedDt, speedMul);
         this.updateSpine(f);
+      }
+    }
+
+    // Fades newly added fish in and removed fish out; removed fish disappear once invisible
+    stepFades(dt) {
+      const rate = dt / FADE_SECONDS;
+      for (let i = this.fish.length - 1; i >= 0; i--) {
+        const f = this.fish[i];
+        if (f.leaving) {
+          f.alpha -= rate;
+          if (f.alpha <= 0) this.fish.splice(i, 1);
+        } else if (f.alpha < 1) {
+          f.alpha = Math.min(1, f.alpha + rate);
+        }
       }
     }
 

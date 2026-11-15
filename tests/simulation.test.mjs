@@ -642,3 +642,61 @@ test('fish anatomy: the tail fin extends behind the body', () => {
   // Regression: the tail fan used to point forward over the body, so it was hidden under it
   assert.ok(left <= tailNodeX - 5, `Tail fin must reach behind the tail end (left=${left}, tail end=${tailNodeX})`);
 });
+
+test('syncFishCount with fade: fish fade in and out instead of popping', () => {
+  const sim = new PondSimulation(400, 300, KOI_VARIETIES);
+  sim.syncFishCount(4);
+  assert.equal(sim.fish.length, 4);
+  assert.ok(sim.fish.every((f) => f.alpha === 1));
+
+  // Shrinking: fish stay (fading) and are only removed once invisible
+  sim.syncFishCount(2, true);
+  assert.equal(sim.fish.length, 4, 'Nobody disappears instantly');
+  assert.equal(sim.fish.filter((f) => f.leaving).length, 2);
+  sim.step(0.4, DEFAULT_SETTINGS);
+  const midAlphas = sim.fish.filter((f) => f.leaving).map((f) => f.alpha);
+  assert.ok(midAlphas.length === 2 && midAlphas.every((a) => a > 0 && a < 1), 'Leaving fish are translucent');
+  for (let i = 0; i < 40; i++) sim.step(0.05, DEFAULT_SETTINGS);
+  assert.equal(sim.fish.length, 2, 'Faded-out fish are removed');
+  assert.ok(sim.fish.every((f) => !f.leaving && f.alpha === 1));
+
+  // Growing: new fish start invisible and fade in
+  sim.syncFishCount(4, true);
+  assert.equal(sim.fish.length, 4);
+  const fresh = sim.fish.filter((f) => f.alpha === 0);
+  assert.equal(fresh.length, 2);
+  sim.step(0.4, DEFAULT_SETTINGS);
+  assert.ok(fresh.every((f) => f.alpha > 0 && f.alpha < 1));
+  for (let i = 0; i < 40; i++) sim.step(0.05, DEFAULT_SETTINGS);
+  assert.ok(sim.fish.every((f) => f.alpha === 1));
+
+  // Changing your mind mid-fade brings the leaving fish back instead of creating new ones
+  sim.syncFishCount(2, true);
+  const leaving = sim.fish.filter((f) => f.leaving);
+  assert.equal(leaving.length, 2);
+  sim.syncFishCount(4, true);
+  assert.equal(sim.fish.length, 4, 'No extra fish were created');
+  assert.ok(leaving.every((f) => !f.leaving));
+});
+
+test('renderer draws fading fish with their opacity and restores it', () => {
+  const renderer = new KoiRenderer();
+  // There is no DOM in Node: stand in for the atlas canvas so the drawing path runs
+  renderer.atlasCtx = { putImageData() {} };
+  renderer.atlasCanvas = {};
+  const sim = new PondSimulation(400, 300, KOI_VARIETIES);
+  sim.syncFishCount(2);
+  sim.fish[0].alpha = 0.4;
+  const seen = [];
+  const ctx = {
+    globalAlpha: 1,
+    drawImage() {
+      seen.push(this.globalAlpha);
+    },
+    fillRect() {},
+    fillStyle: '',
+  };
+  renderer.renderFrame(ctx, sim.fish);
+  assert.deepEqual(seen.sort(), [0.4, 1]);
+  assert.equal(ctx.globalAlpha, 1, 'Opacity is restored after drawing');
+});

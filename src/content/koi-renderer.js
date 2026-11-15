@@ -219,7 +219,7 @@
 
       this.drawQueue = new Array(ATLAS_COLS * ATLAS_ROWS);
       for (let i = 0; i < this.drawQueue.length; i++) {
-        this.drawQueue[i] = { sx: 0, sy: 0, w: 0, h: 0, dx: 0, dy: 0 };
+        this.drawQueue[i] = { sx: 0, sy: 0, w: 0, h: 0, dx: 0, dy: 0, alpha: 1 };
       }
 
       if (typeof document !== 'undefined') {
@@ -601,6 +601,7 @@
         q.h = rect.h;
         q.dx = rect.dx;
         q.dy = rect.dy;
+        q.alpha = fishList[i].alpha === undefined ? 1 : fishList[i].alpha;
       }
 
       if (queued === 0) return;
@@ -613,8 +614,11 @@
         }
         for (let i = 0; i < queued; i++) {
           const q = this.drawQueue[i];
+          // Fish that are fading in or out are drawn translucent
+          ctx.globalAlpha = q.alpha < 0 ? 0 : q.alpha > 1 ? 1 : q.alpha;
           ctx.drawImage(this.atlasCanvas, q.sx, q.sy, q.w, q.h, q.dx, q.dy, q.w, q.h);
         }
+        ctx.globalAlpha = 1;
       }
 
       // Clear only the dirty rects in atlasBuf32

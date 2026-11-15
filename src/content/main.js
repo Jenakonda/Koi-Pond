@@ -23,6 +23,7 @@
   } = KoiPond;
 
   const DARK_LUMINANCE_MAX = 130;
+  const FISH_COUNT_SETTLE_MS = 700; // how long a page-driven change of the school size must hold
 
   // Local files have no hostname; use the same key the popup stores for them
   const hostname =
@@ -42,6 +43,7 @@
   let batteryLowPower = false;
   let resizeTimer = null;
   let isRunning = false;
+  let fishCountTimer = null;
   let isPaused = false; // running, but the page leaves too little room: nothing is simulated or drawn
   let cssScale = 3; // CSS px per pond pixel, snapped to whole device pixels
 
@@ -139,13 +141,35 @@
     }
   }
 
+  // Resizes the school to what the settings and the free space on the page allow. Changes caused by
+  // the page (scrolling, content loading) wait a moment, so a count that flickers around a threshold
+  // does not make fish come and go; the change itself is a fade, never a pop.
+  function applyFishCount(delayMs) {
+    if (!simulation) return;
+    const target = () => fishCountForSpace(settings.fishCount, layerManager.lastVisibleRatio);
+    if (fishCountTimer !== null) {
+      clearTimeout(fishCountTimer);
+      fishCountTimer = null;
+    }
+    if (simulation.fish.length === 0) {
+      simulation.syncFishCount(target()); // first fill: no one to fade
+    } else if (delayMs <= 0) {
+      simulation.syncFishCount(target(), true);
+    } else {
+      fishCountTimer = setTimeout(() => {
+        fishCountTimer = null;
+        if (simulation && isRunning) simulation.syncFishCount(target(), true);
+      }, delayMs);
+    }
+  }
+
   // Pulls the latest page measurement from the layer manager: where the open water is, how many
   // fish fit in it, and whether there is room for the pond at all.
   function syncLayout() {
     if (!simulation) return;
     simulation.setClearMap(layerManager.lastClearMap);
     simulation.setThemeBrightness(detectDarkBackground());
-    simulation.syncFishCount(fishCountForSpace(settings.fishCount, layerManager.lastVisibleRatio));
+    applyFishCount(FISH_COUNT_SETTLE_MS);
 
     isPaused = layerManager.isPaused;
     if (isPaused) {
@@ -172,6 +196,10 @@
   function stopPond() {
     isRunning = false;
     isPaused = false;
+    if (fishCountTimer !== null) {
+      clearTimeout(fishCountTimer);
+      fishCountTimer = null;
+    }
     stopFrames();
     if (resizeTimer !== null) {
       clearTimeout(resizeTimer);
@@ -213,9 +241,7 @@
     if (prev.pixelScale !== settings.pixelScale) {
       updateCanvasSize();
     }
-    if (simulation) {
-      simulation.syncFishCount(fishCountForSpace(settings.fishCount, layerManager.lastVisibleRatio));
-    }
+    applyFishCount(0);
   }
 
   function tick(ts) {
