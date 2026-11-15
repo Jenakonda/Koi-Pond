@@ -617,3 +617,28 @@ test('isScrim recognises a modal dimming layer but not opaque covers or small ov
   assert.equal(isScrim(full, { r: 0, g: 0, b: 0, a: 0 }, vw, vh), false);
   assert.equal(isScrim(full, null, vw, vh), false);
 });
+
+test('fish anatomy: the tail fin extends behind the body', () => {
+  const renderer = new KoiRenderer();
+  const sim = new PondSimulation(300, 200, KOI_VARIETIES);
+  sim.syncFishCount(1);
+  const f = sim.fish[0];
+  f.size = 1;
+  f.segLen = 2.35;
+  f.depth = 1;
+  f.swimPhase = 0;
+  // Straight fish swimming to the right: the head is spine[0], the tail end is the last node
+  for (let k = 0; k < f.spine.length; k++) {
+    f.spine[k].x = 100 - k * f.segLen;
+    f.spine[k].y = 80;
+    f.centerSpine[k].x = f.spine[k].x;
+    f.centerSpine[k].y = 80;
+  }
+  const tailNodeX = f.spine[f.spine.length - 1].x;
+
+  const rect = renderer.rasterizeFishToSlot(f, 0, 0);
+  const left = rect.dx;
+
+  // Regression: the tail fan used to point forward over the body, so it was hidden under it
+  assert.ok(left <= tailNodeX - 5, `Tail fin must reach behind the tail end (left=${left}, tail end=${tailNodeX})`);
+});

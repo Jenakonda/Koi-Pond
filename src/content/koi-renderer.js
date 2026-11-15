@@ -315,13 +315,15 @@
       }
     }
 
-    // Mirrored left/right fins at the spine sample `sp`
+    // Mirrored left/right fins at the spine sample `sp`, swept back by (PI - sweep) from the fish's
+    // heading. The spine runs head to tail, so the sample tangent (tx, ty) points TOWARD THE TAIL;
+    // the forward direction is its opposite.
     stampFinPair(sp, offset, sweep, spreadAngle, length, rays, shadowOx, shadowOy) {
-      const angle = Math.atan2(sp.ty, sp.tx);
+      const angle = Math.atan2(-sp.ty, -sp.tx);
       this.stampFinFan(
         sp.x + sp.nx * offset,
         sp.y + sp.ny * offset,
-        angle + sweep,
+        angle - sweep,
         spreadAngle,
         length,
         rays,
@@ -331,7 +333,7 @@
       this.stampFinFan(
         sp.x - sp.nx * offset,
         sp.y - sp.ny * offset,
-        angle - sweep,
+        angle + sweep,
         spreadAngle,
         length,
         rays,
@@ -391,7 +393,8 @@
       this.stampFinPair(sp, 1.4 * size, 2.25 + pecWave * 0.5, 0.55, 3.5 * size, 4, shadowOx, shadowOy);
 
       sampleSpineOut(spine, nSeg, 0.98, ox, oy, sp);
-      const tailAngle = Math.atan2(-sp.ty, -sp.tx) + Math.sin(fish.swimPhase - 3.6) * 0.28;
+      // The tail fan points away from the body: along the tail-ward tangent
+      const tailAngle = Math.atan2(sp.ty, sp.tx) + Math.sin(fish.swimPhase - 3.6) * 0.28;
       this.stampFinFan(sp.x, sp.y, tailAngle, 1.05, 8.4 * size, 8, shadowOx, shadowOy, true);
     }
 
@@ -429,7 +432,7 @@
       // Barbels (tiny koi whiskers) only on medium/large fish
       if (size >= 0.95) {
         sampleSpineOut(spine, nSeg, 0.02, ox, oy, sp);
-        const bAng = Math.atan2(sp.ty, sp.tx);
+        const bAng = Math.atan2(-sp.ty, -sp.tx); // forward, from the snout
         for (let side = -1; side <= 1; side += 2) {
           const wx = Math.round(sp.x + Math.cos(bAng + side * 0.85) * 2.1 * size);
           const wy = Math.round(sp.y + Math.sin(bAng + side * 0.85) * 2.1 * size);
