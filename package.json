@@ -1,0 +1,14 @@
+{
+  "name": "koi-pond",
+  "version": "0.1.0",
+  "description": "A living pixel-art koi pond that swims behind the web pages you browse (Chrome/Edge extension).",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/simulation.test.mjs",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

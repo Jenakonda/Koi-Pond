@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Koi Pond — Піксельні рибки",
+  "version": "0.1.0",
+  "description": "Живий піксельний ставок із коропами коі позаду елементів веб-сторінок, як у традиційних китайських ресторанах.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Koi Pond — Піксельні рибки",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/shared/defaults.js",
+        "src/content/layer-manager.js",
+        "src/content/koi-renderer.js",
+        "src/content/pond-simulation.js",
+        "src/content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
