@@ -3,7 +3,7 @@
 A pixel-art koi pond that swims **behind** the web pages you browse, like the fish tanks in traditional Chinese restaurants. Extension for Chrome and Edge.
 
 <p align="center">
-  <img src="docs/screenshots/page-light.png" alt="Koi swimming behind the cards of a web page" width="100%">
+  <img src="docs/screenshots/demo.gif" alt="Koi swimming behind the cards of a web page; clicking a free spot drops food" width="100%">
 </p>
 
 The fish live on their own layer behind the page, so text, cards and buttons stay readable and clickable. The koi drift through the open space, slip under content now and then, and swim over to food you drop with a click.
