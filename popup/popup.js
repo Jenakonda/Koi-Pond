@@ -7,6 +7,8 @@
     isSiteAllowed,
     hostMatches,
     normalizeHostEntry,
+    resolveLanguage,
+    translate,
     PondSimulation,
     KoiRenderer,
   } = globalThis.KoiPond;
@@ -36,6 +38,7 @@
     fpsModeGroup: $('fpsModeGroup'),
     ripplesToggle: $('ripplesToggle'),
     pondHint: $('pondHint'),
+    languageGroup: $('languageGroup'),
     siteModeGroup: $('siteModeGroup'),
     siteModeHint: $('siteModeHint'),
     siteAddForm: $('siteAddForm'),
@@ -47,6 +50,28 @@
   const TAB_STORAGE_KEY = 'koiPopupTab';
 
   let currentSettings = sanitizeSettings(DEFAULT_SETTINGS);
+  let language = resolveLanguage(currentSettings.language, navigator.language);
+
+  const t = (key, params) => translate(language, key, params);
+
+  // Fills every element marked with data-i18n (text), data-i18n-aria, data-i18n-title or
+  // data-i18n-placeholder, and updates the document language.
+  function applyTranslations() {
+    document.documentElement.lang = language;
+    document.title = t('pageTitle');
+    for (const el of document.querySelectorAll('[data-i18n]')) {
+      el.textContent = t(el.dataset.i18n);
+    }
+    for (const el of document.querySelectorAll('[data-i18n-aria]')) {
+      el.setAttribute('aria-label', t(el.dataset.i18nAria));
+    }
+    for (const el of document.querySelectorAll('[data-i18n-title]')) {
+      el.title = t(el.dataset.i18nTitle);
+    }
+    for (const el of document.querySelectorAll('[data-i18n-placeholder]')) {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    }
+  }
   let activeTabId = null;
   let activeHostname = '';
   let isWebTab = false;
@@ -142,17 +167,13 @@
     const whitelist = currentSettings.siteMode === 'whitelist';
 
     els.siteCount.textContent = list.length > 0 ? String(list.length) : '';
-    els.siteModeHint.textContent = whitelist
-      ? 'Ставок з’являється лише на сайтах зі списку.'
-      : 'Ставок працює всюди, крім сайтів зі списку.';
+    els.siteModeHint.textContent = t(whitelist ? 'siteHintWhitelist' : 'siteHintBlacklist');
 
     els.siteList.textContent = '';
     if (list.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'site-empty';
-      empty.textContent = whitelist
-        ? 'Список порожній — ставок ніде не працює. Додайте перший сайт.'
-        : 'Список порожній — ставок працює всюди.';
+      empty.textContent = t(whitelist ? 'siteEmptyWhitelist' : 'siteEmptyBlacklist');
       els.siteList.appendChild(empty);
       return;
     }
@@ -172,7 +193,7 @@
       remove.type = 'button';
       remove.className = 'site-remove';
       remove.textContent = '✕';
-      remove.setAttribute('aria-label', `Прибрати ${host} зі списку`);
+      remove.setAttribute('aria-label', t('siteRemoveAria', { host }));
       remove.addEventListener('click', () => removeSite(host));
 
       item.appendChild(name);
@@ -199,26 +220,37 @@
   }
 
   function describeState(siteAllowed) {
-    if (!isWebTab) return 'Тут ставок недоступний';
-    if (!currentSettings.enabled) return 'Вимкнено всюди';
+    if (!isWebTab) return t('stateUnavailable');
+    if (!currentSettings.enabled) return t('stateOffEverywhere');
     if (!siteAllowed) {
-      return currentSettings.siteMode === 'whitelist' ? 'Немає в білому списку' : 'Вимкнено на цьому сайті';
+      return t(currentSettings.siteMode === 'whitelist' ? 'stateNotWhitelisted' : 'stateBlacklisted');
     }
-    if (!tabConnected) return 'Оновіть вкладку (F5), щоб підключити';
-    if (tabPaused) return 'Замало місця — ставок на паузі';
-    return 'Ставок активний';
+    if (!tabConnected) return t('stateReload');
+    if (tabPaused) return t('statePaused');
+    return t('stateActive');
   }
 
   function describeHint() {
-    if (currentSettings.layerMode === 'strict-behind') return 'Позаду: видно лише на прозорому фоні та полях';
-    if (currentSettings.layerMode === 'ambient-top') return 'Поверх сторінки: кліки проходять крізь рибок';
-    if (currentSettings.cursorMode === 'feed') return 'Клікайте по вільному місцю сторінки, щоб підгодувати рибок';
-    if (currentSettings.cursorMode === 'scatter') return 'Рухайте курсором — рибки розпливатимуться';
-    return 'Спокійний режим споглядання';
+    if (currentSettings.layerMode === 'strict-behind') return t('hintBehind');
+    if (currentSettings.layerMode === 'ambient-top') return t('hintTop');
+    if (currentSettings.cursorMode === 'feed') return t('hintFeed');
+    if (currentSettings.cursorMode === 'scatter') return t('hintScare');
+    return t('hintCalm');
   }
+
+  let appliedLanguage = null;
 
   function renderUI() {
     const s = currentSettings;
+
+    language = resolveLanguage(s.language, navigator.language);
+    if (language !== appliedLanguage) {
+      appliedLanguage = language;
+      applyTranslations();
+      els.siteError.textContent = ''; // a shown error would stay in the previous language
+    }
+    setSegmentedValue(els.languageGroup, language);
+
     els.enabledToggle.checked = s.enabled;
     document.body.classList.toggle('pond-off', !s.enabled);
 
@@ -242,17 +274,17 @@
 
     els.statusDot.classList.toggle('off', !pondActive);
     els.statusDot.classList.toggle('paused', pondActive && tabPaused);
-    els.siteHost.textContent = isWebTab ? activeHostname || 'Поточна сторінка' : 'Системна сторінка браузера';
+    els.siteHost.textContent = isWebTab ? activeHostname || t('hostCurrentPage') : t('hostSystemPage');
     els.siteState.textContent = describeState(siteAllowed);
 
     const onList = hostMatches(activeList(), activeHostname);
     els.siteToggleBtn.disabled = !isWebTab;
     if (!isWebTab) {
-      els.siteToggleBtn.textContent = 'Недоступно';
+      els.siteToggleBtn.textContent = t('siteUnavailable');
     } else if (s.siteMode === 'whitelist') {
-      els.siteToggleBtn.textContent = onList ? 'Прибрати сайт' : 'Додати сайт';
+      els.siteToggleBtn.textContent = t(onList ? 'siteRemove' : 'siteAdd');
     } else {
-      els.siteToggleBtn.textContent = onList ? 'Увімкнути тут' : 'Вимкнути тут';
+      els.siteToggleBtn.textContent = t(onList ? 'siteOnHere' : 'siteOffHere');
     }
 
     els.feedBtn.disabled = !pondDrawing;
@@ -336,6 +368,7 @@
   wireSegmented(els.cursorModeGroup, 'cursorMode');
   wireSegmented(els.fpsModeGroup, 'fpsMode');
   wireSegmented(els.siteModeGroup, 'siteMode');
+  wireSegmented(els.languageGroup, 'language');
 
   els.siteAddForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -343,11 +376,11 @@
     if (!raw.trim()) return;
     const host = normalizeHostEntry(raw);
     if (!host) {
-      els.siteError.textContent = 'Не схоже на адресу сайту. Приклад: example.com';
+      els.siteError.textContent = t('siteInvalid');
       return;
     }
     if (activeList().includes(host)) {
-      els.siteError.textContent = `${host} уже є у списку`;
+      els.siteError.textContent = t('siteDuplicate', { host });
       return;
     }
     els.siteError.textContent = '';

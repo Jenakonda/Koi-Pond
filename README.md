@@ -35,7 +35,7 @@ The extension is not on the Chrome Web Store, so load it unpacked:
 
 ## Settings
 
-Click the toolbar icon. The panel is in Ukrainian.
+Click the toolbar icon. The panel comes in English and Ukrainian: it follows your browser language, and the **EN / UA** switch in the header changes it.
 
 <table>
   <tr>

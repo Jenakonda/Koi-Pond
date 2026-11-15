@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="uk">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Koi Pond — Налаштування</title>
+    <title>Koi Pond</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body class="preload">
@@ -13,51 +13,57 @@
         <div class="banner-content">
           <div class="brand">
             <h1>Koi Pond</h1>
-            <p>Піксельні коропи коі</p>
+            <p data-i18n="brandSub"></p>
           </div>
-          <label class="switch" title="Увімкнути або вимкнути ставок усюди">
-            <input type="checkbox" id="enabledToggle" aria-label="Увімкнути ставок" />
-            <span class="slider"></span>
-          </label>
+          <div class="banner-controls">
+            <div class="lang" id="languageGroup" role="group" data-i18n-aria="languageAria">
+              <button type="button" data-val="en">EN</button>
+              <button type="button" data-val="uk">UA</button>
+            </div>
+            <label class="switch" data-i18n-title="enableTitle">
+              <input type="checkbox" id="enabledToggle" data-i18n-aria="enableAria" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </header>
 
       <section class="site-bar">
         <span class="status-dot" id="statusDot"></span>
         <div class="site-text">
-          <span class="site-host" id="siteHost">Завантаження…</span>
+          <span class="site-host" id="siteHost" data-i18n="loading"></span>
           <span class="site-state" id="siteState"></span>
         </div>
-        <button class="btn-ghost" id="siteToggleBtn" type="button">Вимкнути тут</button>
+        <button class="btn-ghost" id="siteToggleBtn" type="button"></button>
       </section>
 
-      <nav class="tabs" role="tablist" aria-label="Розділи налаштувань">
-        <button type="button" role="tab" id="tabPond" data-tab="pond" aria-controls="panelPond">Ставок</button>
+      <nav class="tabs" role="tablist" data-i18n-aria="tabsAria">
+        <button type="button" role="tab" id="tabPond" data-tab="pond" aria-controls="panelPond" data-i18n="tabPond"></button>
         <button type="button" role="tab" id="tabSites" data-tab="sites" aria-controls="panelSites">
-          Сайти<span class="tab-count" id="siteCount"></span>
+          <span data-i18n="tabSites"></span><span class="tab-count" id="siteCount"></span>
         </button>
       </nav>
 
       <div class="panels">
         <section class="panel" id="panelPond" role="tabpanel" aria-labelledby="tabPond">
           <div class="actions-row">
-            <button class="btn-action btn-feed" id="feedBtn" type="button">Кинути корм</button>
-            <button class="btn-action btn-respawn" id="respawnBtn" type="button">Нова зграйка</button>
+            <button class="btn-action btn-feed" id="feedBtn" type="button" data-i18n="feed"></button>
+            <button class="btn-action btn-respawn" id="respawnBtn" type="button" data-i18n="respawn"></button>
           </div>
 
           <div class="card">
             <div class="range-row">
-              <label for="fishCountRange">Рибок</label>
+              <label for="fishCountRange" data-i18n="fish"></label>
               <input type="range" id="fishCountRange" min="1" max="20" step="1" />
               <span class="value-badge" id="fishCountVal">7</span>
             </div>
             <div class="range-row">
-              <label for="speedRange">Швидкість</label>
+              <label for="speedRange" data-i18n="speed"></label>
               <input type="range" id="speedRange" min="0.4" max="2.2" step="0.1" />
               <span class="value-badge" id="speedVal">1.0x</span>
             </div>
             <div class="range-row">
-              <label for="opacityRange">Видимість</label>
+              <label for="opacityRange" data-i18n="visibility"></label>
               <input type="range" id="opacityRange" min="0.25" max="1" step="0.05" />
               <span class="value-badge" id="opacityVal">90%</span>
             </div>
@@ -65,41 +71,41 @@
 
           <div class="card">
             <div class="mode-row">
-              <span class="mode-label">Піксель</span>
-              <div class="segmented" id="pixelScaleGroup" role="group" aria-label="Розмір пікселя">
-                <button type="button" data-val="2">Дрібний</button>
-                <button type="button" data-val="3">Середній</button>
-                <button type="button" data-val="4">Великий</button>
+              <span class="mode-label" data-i18n="pixel"></span>
+              <div class="segmented" id="pixelScaleGroup" role="group" data-i18n-aria="pixelAria">
+                <button type="button" data-val="2" data-i18n="pixelFine"></button>
+                <button type="button" data-val="3" data-i18n="pixelMedium"></button>
+                <button type="button" data-val="4" data-i18n="pixelLarge"></button>
               </div>
             </div>
             <div class="mode-row">
-              <span class="mode-label">Шар</span>
-              <div class="segmented" id="layerModeGroup" role="group" aria-label="Шар на сторінці">
-                <button type="button" data-val="smart">Розумний</button>
-                <button type="button" data-val="strict-behind">Позаду</button>
-                <button type="button" data-val="ambient-top">Поверх</button>
+              <span class="mode-label" data-i18n="layer"></span>
+              <div class="segmented" id="layerModeGroup" role="group" data-i18n-aria="layerAria">
+                <button type="button" data-val="smart" data-i18n="layerSmart"></button>
+                <button type="button" data-val="strict-behind" data-i18n="layerBehind"></button>
+                <button type="button" data-val="ambient-top" data-i18n="layerTop"></button>
               </div>
             </div>
             <div class="mode-row">
-              <span class="mode-label">Курсор</span>
-              <div class="segmented" id="cursorModeGroup" role="group" aria-label="Реакція на курсор">
-                <button type="button" data-val="feed">Годувати</button>
-                <button type="button" data-val="scatter">Лякати</button>
-                <button type="button" data-val="none">Спокій</button>
+              <span class="mode-label" data-i18n="cursor"></span>
+              <div class="segmented" id="cursorModeGroup" role="group" data-i18n-aria="cursorAria">
+                <button type="button" data-val="feed" data-i18n="cursorFeed"></button>
+                <button type="button" data-val="scatter" data-i18n="cursorScare"></button>
+                <button type="button" data-val="none" data-i18n="cursorCalm"></button>
               </div>
             </div>
             <div class="mode-row">
-              <span class="mode-label">Кадри</span>
-              <div class="segmented" id="fpsModeGroup" role="group" aria-label="Частота кадрів">
-                <button type="button" data-val="auto">Авто</button>
+              <span class="mode-label" data-i18n="frames"></span>
+              <div class="segmented" id="fpsModeGroup" role="group" data-i18n-aria="framesAria">
+                <button type="button" data-val="auto" data-i18n="framesAuto"></button>
                 <button type="button" data-val="60">60</button>
                 <button type="button" data-val="30">30</button>
               </div>
             </div>
             <div class="mode-row">
-              <span class="mode-label">Кола на воді</span>
+              <span class="mode-label" data-i18n="ripples"></span>
               <label class="switch switch-sm">
-                <input type="checkbox" id="ripplesToggle" aria-label="Кола на воді" />
+                <input type="checkbox" id="ripplesToggle" data-i18n-aria="ripples" />
                 <span class="slider"></span>
               </label>
             </div>
@@ -109,9 +115,9 @@
         </section>
 
         <section class="panel" id="panelSites" role="tabpanel" aria-labelledby="tabSites">
-          <div class="segmented two" id="siteModeGroup" role="group" aria-label="Де працює ставок">
-            <button type="button" data-val="blacklist">Усюди, крім списку</button>
-            <button type="button" data-val="whitelist">Лише зі списку</button>
+          <div class="segmented two" id="siteModeGroup" role="group" data-i18n-aria="siteModeAria">
+            <button type="button" data-val="blacklist" data-i18n="siteModeBlacklist"></button>
+            <button type="button" data-val="whitelist" data-i18n="siteModeWhitelist"></button>
           </div>
           <p class="hint hint-left" id="siteModeHint"></p>
 
@@ -119,21 +125,22 @@
             <input
               type="text"
               id="siteInput"
-              placeholder="example.com"
+              data-i18n-placeholder="sitePlaceholder"
+              data-i18n-aria="siteInputAria"
               autocomplete="off"
               spellcheck="false"
-              aria-label="Адреса сайту"
             />
-            <button class="btn-ghost" type="submit">Додати</button>
+            <button class="btn-ghost" type="submit" data-i18n="siteAddButton"></button>
           </form>
           <p class="form-error" id="siteError" role="alert"></p>
 
-          <ul class="site-list" id="siteList" aria-label="Список сайтів"></ul>
+          <ul class="site-list" id="siteList" data-i18n-aria="siteListAria"></ul>
         </section>
       </div>
     </main>
 
     <script src="../src/shared/defaults.js"></script>
+    <script src="../src/shared/i18n.js"></script>
     <script src="../src/content/koi-renderer.js"></script>
     <script src="../src/content/pond-simulation.js"></script>
     <script src="popup.js"></script>

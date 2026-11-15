@@ -59,6 +59,59 @@ test('sanitizeSettings clamps bounds and preserves valid options', () => {
   assert.equal(sanitizeSettings({ siteMode: 'nonsense' }).siteMode, 'blacklist');
 });
 
+test('translations: both languages have the same keys, params and no empty strings', () => {
+  const { STRINGS, resolveLanguage, translate, LANGUAGES } = require('../src/shared/i18n.js');
+  assert.deepEqual(LANGUAGES, ['en', 'uk']);
+  const enKeys = Object.keys(STRINGS.en).sort();
+  const ukKeys = Object.keys(STRINGS.uk).sort();
+  assert.deepEqual(ukKeys, enKeys, 'Every key must exist in both languages');
+
+  const params = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
+  for (const key of enKeys) {
+    assert.ok(STRINGS.en[key].length > 0 && STRINGS.uk[key].length > 0, `Empty translation: ${key}`);
+    assert.equal(params(STRINGS.uk[key]), params(STRINGS.en[key]), `Placeholders differ: ${key}`);
+  }
+
+  // Language choice: explicit setting wins, "auto" follows the browser, English is the fallback
+  assert.equal(resolveLanguage('uk', 'en-US'), 'uk');
+  assert.equal(resolveLanguage('en', 'uk-UA'), 'en');
+  assert.equal(resolveLanguage('auto', 'uk-UA'), 'uk');
+  assert.equal(resolveLanguage('auto', 'UK'), 'uk');
+  assert.equal(resolveLanguage('auto', 'de-DE'), 'en');
+  assert.equal(resolveLanguage('auto', undefined), 'en');
+
+  assert.equal(translate('en', 'siteDuplicate', { host: 'a.com' }), 'a.com is already in the list');
+  assert.equal(translate('uk', 'siteDuplicate', { host: 'a.com' }), 'a.com уже є у списку');
+  assert.equal(translate('xx', 'feed'), STRINGS.en.feed, 'Unknown language falls back to English');
+  assert.equal(translate('en', 'nonexistent'), 'nonexistent');
+
+  // The language setting is validated
+  assert.equal(sanitizeSettings({ language: 'uk' }).language, 'uk');
+  assert.equal(sanitizeSettings({ language: 'fr' }).language, 'auto');
+  assert.equal(sanitizeSettings({}).language, 'auto');
+});
+
+test('popup.html: every data-i18n key exists in the dictionaries', async () => {
+  const fs = await import('node:fs');
+  const { STRINGS } = require('../src/shared/i18n.js');
+  const html = fs.readFileSync(new URL('../popup/popup.html', import.meta.url), 'utf8');
+  const keys = [...html.matchAll(/data-i18n(?:-\w+)?="(\w+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length > 30, 'Expected many translated elements');
+  for (const key of keys) {
+    assert.ok(key in STRINGS.en, `popup.html uses unknown key: ${key}`);
+  }
+  assert.equal(/[А-Яа-яІіЇїЄєҐґ]/.test(html), false, 'popup.html must not contain hard-coded Ukrainian text');
+
+  const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+  for (const lang of ['en', 'uk']) {
+    const messages = JSON.parse(fs.readFileSync(new URL(`../_locales/${lang}/messages.json`, import.meta.url), 'utf8'));
+    for (const name of ['extName', 'extDescription', 'actionTitle']) {
+      assert.ok(messages[name] && messages[name].message, `_locales/${lang} is missing ${name}`);
+    }
+  }
+  assert.equal(manifest.default_locale, 'en');
+});
+
 test('normalizeHostEntry accepts hosts, URLs and wildcards and rejects junk', () => {
   assert.equal(normalizeHostEntry('Example.COM'), 'example.com');
   assert.equal(normalizeHostEntry('  https://www.Example.com:8080/path?q=1#x  '), 'example.com');

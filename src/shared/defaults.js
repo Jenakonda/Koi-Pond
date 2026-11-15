@@ -13,6 +13,7 @@
     cursorMode: 'feed', // 'feed' | 'scatter' | 'none'
     fpsMode: 'auto', // 'auto' (60, or 30 when saving power) | '60' | '30'
     ripples: true,
+    language: 'auto', // control panel language: 'auto' (browser) | 'en' | 'uk'
     siteMode: 'blacklist', // 'blacklist' = everywhere except the list | 'whitelist' = only on the list
     blacklist: [],
     whitelist: [],
@@ -373,6 +374,7 @@
       cursorMode: validCursors.includes(src.cursorMode) ? src.cursorMode : DEFAULT_SETTINGS.cursorMode,
       fpsMode: validFps.includes(src.fpsMode) ? src.fpsMode : DEFAULT_SETTINGS.fpsMode,
       ripples: typeof src.ripples === 'boolean' ? src.ripples : DEFAULT_SETTINGS.ripples,
+      language: ['en', 'uk'].includes(src.language) ? src.language : 'auto',
       siteMode: src.siteMode === 'whitelist' ? 'whitelist' : 'blacklist',
       // disabledHosts is the pre-list format: it becomes the blacklist when no blacklist is given
       blacklist: sanitizeHostList(Array.isArray(src.blacklist) ? src.blacklist : src.disabledHosts),
